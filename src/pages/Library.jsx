@@ -181,8 +181,8 @@ function AddPaintModal({ initial, onSave, onClose }) {
     const [liveColor, setLiveColor] = useState(null)
     const videoRef = useRef(null)
     const streamRef = useRef(null)
-    const rafRef = useRef(null)
-    const sampleCanvasRef = useRef(document.createElement('canvas'))
+    const intervalRef = useRef(null)
+    const canvasRef = useRef(null)
     const toast = useToast()
 
     // Parse hex to rgb
@@ -191,28 +191,23 @@ function AddPaintModal({ initial, onSave, onClose }) {
         catch { return { r: 124, g: 106, b: 247 } }
     }
 
-    // Live-sample center pixel via rAF when camera is active
+    // Sample center pixel every 150 ms while camera is running
     useEffect(() => {
-        if (!cameraActive) { cancelAnimationFrame(rafRef.current); return }
-        const canvas = sampleCanvasRef.current
-        canvas.width = 1; canvas.height = 1
-        const ctx = canvas.getContext('2d')
-
-        function sample() {
+        if (!cameraActive) return
+        intervalRef.current = setInterval(() => {
             const video = videoRef.current
-            if (video && video.readyState >= 2) {
-                ctx.drawImage(video,
-                    Math.floor(video.videoWidth / 2), Math.floor(video.videoHeight / 2),
-                    1, 1, 0, 0, 1, 1
-                )
-                const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data
-                const h = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')
-                setLiveColor(h)
-            }
-            rafRef.current = requestAnimationFrame(sample)
-        }
-        rafRef.current = requestAnimationFrame(sample)
-        return () => cancelAnimationFrame(rafRef.current)
+            const canvas = canvasRef.current
+            if (!video || !canvas || video.readyState < 2 || video.videoWidth === 0) return
+            canvas.width = video.videoWidth
+            canvas.height = video.videoHeight
+            const ctx = canvas.getContext('2d')
+            ctx.drawImage(video, 0, 0)
+            const cx = Math.floor(video.videoWidth / 2)
+            const cy = Math.floor(video.videoHeight / 2)
+            const d = ctx.getImageData(cx, cy, 1, 1).data
+            setLiveColor('#' + [d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, '0')).join(''))
+        }, 150)
+        return () => clearInterval(intervalRef.current)
     }, [cameraActive])
 
     async function startCamera() {
@@ -227,7 +222,7 @@ function AddPaintModal({ initial, onSave, onClose }) {
     }
 
     function stopCamera() {
-        cancelAnimationFrame(rafRef.current)
+        clearInterval(intervalRef.current)
         streamRef.current?.getTracks().forEach(t => t.stop())
         setCameraActive(false)
         setLiveColor(null)
@@ -263,6 +258,8 @@ function AddPaintModal({ initial, onSave, onClose }) {
 
                 {tab === 'camera' && (
                     <div style={{ marginBottom: 16 }}>
+                        {/* Hidden canvas used for pixel sampling */}
+                        <canvas ref={canvasRef} style={{ display: 'none' }} />
                         <div className="camera-wrapper">
                             <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%' }} />
                             {/* Center crosshair */}
@@ -271,11 +268,10 @@ function AddPaintModal({ initial, onSave, onClose }) {
                             {liveColor && (
                                 <div style={{
                                     position: 'absolute', top: 12, right: 12,
-                                    width: 40, height: 40, borderRadius: '50%',
+                                    width: 44, height: 44, borderRadius: '50%',
                                     background: liveColor,
                                     border: '3px solid rgba(255,255,255,0.9)',
-                                    boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
-                                    transition: 'background 0.1s'
+                                    boxShadow: '0 2px 16px rgba(0,0,0,0.6)',
                                 }} />
                             )}
                         </div>
