@@ -5,6 +5,14 @@ import { useToast } from '../components/Toast.jsx'
 import PhotoColorPicker from '../components/PhotoColorPicker.jsx'
 import chroma from 'chroma-js'
 
+const STANDARD_COLORS = [
+    { name: 'Titanium White', hex: '#F2F0EC', brand: 'Generic' },
+    { name: 'Mars Black', hex: '#1C1C1E', brand: 'Generic' },
+    { name: 'Cadmium Red', hex: '#E8291C', brand: 'Generic' },
+    { name: 'Ultramarine', hex: '#1B3F8B', brand: 'Generic' },
+    { name: 'Yellow Ochre', hex: '#C4922A', brand: 'Generic' },
+]
+
 export default function Library() {
     const [paints, setPaints] = useState([])
     const [search, setSearch] = useState('')
@@ -43,6 +51,15 @@ export default function Library() {
         toast(data.id ? 'Paint updated ✓' : 'Paint added to library ✓')
     }
 
+    async function handleQuickAdd(color) {
+        const already = paints.some(p => p.hex === color.hex)
+        if (already) { toast(`${color.name} is already in your library`); return }
+        const c = chroma(color.hex)
+        await addPaint({ name: color.name, brand: color.brand, hex: color.hex, r: Math.round(c.get('rgb.r')), g: Math.round(c.get('rgb.g')), b: Math.round(c.get('rgb.b')) })
+        await load()
+        toast(`${color.name} added ✓`)
+    }
+
     return (
         <div className="page">
             <div className="page-header">
@@ -66,6 +83,38 @@ export default function Library() {
                     onChange={e => setSearch(e.target.value)}
                     id="library-search"
                 />
+            </div>
+
+            {/* Quick-add standard colors */}
+            <div style={{ marginBottom: 16 }}>
+                <div className="section-label" style={{ marginBottom: 8 }}>Quick Add</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {STANDARD_COLORS.map(color => {
+                        const added = paints.some(p => p.hex === color.hex)
+                        return (
+                            <button
+                                key={color.hex}
+                                onClick={() => handleQuickAdd(color)}
+                                title={color.name}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: 7,
+                                    padding: '7px 12px 7px 8px',
+                                    background: added ? 'rgba(124,106,247,0.12)' : 'var(--bg-card)',
+                                    border: `1px solid ${added ? 'var(--accent)' : 'var(--border)'}`,
+                                    borderRadius: 999, cursor: 'pointer', font: 'inherit',
+                                    fontSize: 12, fontWeight: 600,
+                                    color: added ? 'var(--accent)' : 'var(--text)',
+                                    transition: 'all 0.2s',
+                                    opacity: added ? 0.7 : 1,
+                                }}
+                            >
+                                <div style={{ width: 18, height: 18, borderRadius: '50%', background: color.hex, border: '1.5px solid rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                                {color.name}
+                                {added && <span style={{ fontSize: 11 }}>✓</span>}
+                            </button>
+                        )
+                    })}
+                </div>
             </div>
 
             {filtered.length === 0 ? (
