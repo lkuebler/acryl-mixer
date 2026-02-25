@@ -178,8 +178,11 @@ function AddPaintModal({ initial, onSave, onClose }) {
     const [hex, setHex] = useState(initial?.hex || '#7c6af7')
     const [cameraActive, setCameraActive] = useState(false)
     const [extractedPreview, setExtractedPreview] = useState(null)
+    const [liveColor, setLiveColor] = useState(null)
     const videoRef = useRef(null)
     const streamRef = useRef(null)
+    const rafRef = useRef(null)
+    const sampleCanvasRef = useRef(document.createElement('canvas'))
     const toast = useToast()
 
     // Parse hex to rgb
@@ -187,6 +190,30 @@ function AddPaintModal({ initial, onSave, onClose }) {
         try { const c = chroma(h); return { r: c.get('rgb.r'), g: c.get('rgb.g'), b: c.get('rgb.b') } }
         catch { return { r: 124, g: 106, b: 247 } }
     }
+
+    // Live-sample center pixel via rAF when camera is active
+    useEffect(() => {
+        if (!cameraActive) { cancelAnimationFrame(rafRef.current); return }
+        const canvas = sampleCanvasRef.current
+        canvas.width = 1; canvas.height = 1
+        const ctx = canvas.getContext('2d')
+
+        function sample() {
+            const video = videoRef.current
+            if (video && video.readyState >= 2) {
+                ctx.drawImage(video,
+                    Math.floor(video.videoWidth / 2), Math.floor(video.videoHeight / 2),
+                    1, 1, 0, 0, 1, 1
+                )
+                const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data
+                const h = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')
+                setLiveColor(h)
+            }
+            rafRef.current = requestAnimationFrame(sample)
+        }
+        rafRef.current = requestAnimationFrame(sample)
+        return () => cancelAnimationFrame(rafRef.current)
+    }, [cameraActive])
 
     async function startCamera() {
         try {
@@ -200,25 +227,18 @@ function AddPaintModal({ initial, onSave, onClose }) {
     }
 
     function stopCamera() {
+        cancelAnimationFrame(rafRef.current)
         streamRef.current?.getTracks().forEach(t => t.stop())
         setCameraActive(false)
+        setLiveColor(null)
     }
 
-    async function captureFrame() {
-        if (!videoRef.current) return
-        const video = videoRef.current
-        const canvas = document.createElement('canvas')
-        canvas.width = video.videoWidth
-        canvas.height = video.videoHeight
-        canvas.getContext('2d').drawImage(video, 0, 0)
-        canvas.toBlob(async (blob) => {
-            if (!blob) return
-            const color = await extractColorFromBlob(blob)
-            setHex(color.hex)
-            setExtractedPreview(color.hex)
-            stopCamera()
-            toast('Color extracted! 🎨')
-        })
+    function captureFrame() {
+        if (!liveColor) return
+        setHex(liveColor)
+        setExtractedPreview(liveColor)
+        stopCamera()
+        toast('Color captured! 🎨')
     }
 
     function handleSave() {
@@ -245,9 +265,21 @@ function AddPaintModal({ initial, onSave, onClose }) {
                     <div style={{ marginBottom: 16 }}>
                         <div className="camera-wrapper">
                             <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%' }} />
+                            {/* Center crosshair */}
                             <div className="camera-crosshair" />
+                            {/* Live color preview — top right */}
+                            {liveColor && (
+                                <div style={{
+                                    position: 'absolute', top: 12, right: 12,
+                                    width: 40, height: 40, borderRadius: '50%',
+                                    background: liveColor,
+                                    border: '3px solid rgba(255,255,255,0.9)',
+                                    boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
+                                    transition: 'background 0.1s'
+                                }} />
+                            )}
                         </div>
-                        <button className="btn btn-primary w-full mt-3" onClick={captureFrame}>📸 Capture Color</button>
+                        <button className="btn btn-primary w-full mt-3" onClick={captureFrame} disabled={!liveColor}>📸 Capture Color</button>
                         {extractedPreview && (
                             <div className="flex items-center gap-3 mt-3">
                                 <div className="swatch" style={{ background: extractedPreview }} />
