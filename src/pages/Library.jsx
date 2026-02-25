@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { getAllPaints, addPaint, deletePaint, updatePaint } from '../db/db.js'
-import { extractColorFromBlob } from '../utils/colorExtract.js'
 import { contrastColor } from '../utils/colorHarmony.js'
 import { useToast } from '../components/Toast.jsx'
+import PhotoColorPicker from '../components/PhotoColorPicker.jsx'
 import chroma from 'chroma-js'
 
 export default function Library() {
@@ -172,16 +172,6 @@ function AddPaintModal({ initial, onSave, onClose }) {
         })
     }
 
-    function handleImageUpload(e) {
-        const file = e.target.files?.[0]
-        if (!file) return
-        extractColorFromBlob(file).then(color => {
-            setHex(color.hex)
-            setExtractedPreview(color.hex)
-            toast('Color extracted! 🎨')
-        })
-    }
-
     function handleSave() {
         if (!name.trim()) { toast('Please enter a paint name'); return }
         let validHex = hex
@@ -220,19 +210,14 @@ function AddPaintModal({ initial, onSave, onClose }) {
 
                 {tab === 'photo' && (
                     <div style={{ marginBottom: 16 }}>
-                        <label className="btn btn-ghost w-full" style={{ cursor: 'pointer' }}>
-                            📁 Choose Photo
-                            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
-                        </label>
-                        {extractedPreview && (
-                            <div className="flex items-center gap-3 mt-3">
-                                <div className="swatch swatch-lg" style={{ background: extractedPreview }} />
-                                <div>
-                                    <div className="font-semibold">{extractedPreview}</div>
-                                    <div className="text-xs text-muted mt-2">Extracted from photo</div>
-                                </div>
-                            </div>
-                        )}
+                        <PhotoColorPicker
+                            pickedHex={extractedPreview}
+                            onColorPicked={({ hex: pickedHex }) => {
+                                setHex(pickedHex)
+                                setExtractedPreview(pickedHex)
+                                toast('Color picked! 🎨')
+                            }}
+                        />
                     </div>
                 )}
 
