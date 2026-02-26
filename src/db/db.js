@@ -85,3 +85,14 @@ export async function importDB(data) {
     }
     await tx.done
 }
+
+// ─── Clear all data ──────────────────────────────────────────────────────────
+
+export async function clearAllData() {
+    const db = await getDB()
+    const tx = db.transaction(['paints', 'palettes'], 'readwrite')
+    await tx.objectStore('paints').clear()
+    await tx.objectStore('palettes').clear()
+    await tx.done
+}
+

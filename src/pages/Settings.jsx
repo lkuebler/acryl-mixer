@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
 import { getAllPaints, getAllPalettes } from '../db/db.js'
+import { clearAllData } from '../db/db.js'
 import { importDB } from '../db/db.js'
 import { downloadJSON, downloadCSV } from '../db/export.js'
 import { useToast } from '../components/Toast.jsx'
+import { resetOnboarding } from '../components/Onboarding.jsx'
 
-export default function Settings() {
+export default function Settings({ onShowOnboarding }) {
     const [paints, setPaints] = useState([])
     const [palettes, setPalettes] = useState([])
+    const [deleteStage, setDeleteStage] = useState(0) // 0=idle 1=confirm 2=deleting
     const toast = useToast()
 
     useEffect(() => {
@@ -35,13 +38,34 @@ export default function Settings() {
             const text = await file.text()
             const data = JSON.parse(text)
             await importDB(data)
-            const updated = await getAllPaints()
-            setPaints(updated)
+            const [p, pal] = await Promise.all([getAllPaints(), getAllPalettes()])
+            setPaints(p); setPalettes(pal)
             toast(`Imported ${data.paints?.length || 0} paints, ${data.palettes?.length || 0} palettes ✓`)
         } catch {
             toast('Import failed — invalid file')
         }
         e.target.value = ''
+    }
+
+    async function handleDeleteAll() {
+        if (deleteStage === 0) {
+            setDeleteStage(1)
+            // auto-reset after 4 s if user doesn't confirm
+            setTimeout(() => setDeleteStage(s => s === 1 ? 0 : s), 4000)
+            return
+        }
+        if (deleteStage === 1) {
+            setDeleteStage(2)
+            await clearAllData()
+            setPaints([]); setPalettes([])
+            setDeleteStage(0)
+            toast('All data deleted')
+        }
+    }
+
+    function handleShowOnboarding() {
+        resetOnboarding()
+        onShowOnboarding?.()
     }
 
     return (
@@ -88,6 +112,74 @@ export default function Settings() {
                 </label>
             </div>
 
+            {/* App */}
+            <div className="card" style={{ marginBottom: 16 }}>
+                <div className="section-label" style={{ marginBottom: 4 }}>App</div>
+                <div className="text-sm text-muted" style={{ marginBottom: 14, lineHeight: 1.5 }}>
+                    Replay the onboarding tour shown on first launch.
+                </div>
+                <button className="btn btn-ghost w-full" onClick={handleShowOnboarding} id="show-onboarding-btn">
+                    🗺️ Show App Tour
+                </button>
+            </div>
+
+            {/* Danger zone */}
+            <div className="card" style={{ marginBottom: 16, border: '1px solid rgba(248,124,106,0.25)' }}>
+                <div className="section-label" style={{ marginBottom: 4, color: 'var(--accent2)' }}>Danger Zone</div>
+                <div className="text-sm text-muted" style={{ marginBottom: 14, lineHeight: 1.5 }}>
+                    Permanently delete all paints and palettes from this device. This cannot be undone.
+                </div>
+
+                {deleteStage === 0 && (
+                    <button
+                        className="btn btn-danger w-full"
+                        onClick={handleDeleteAll}
+                        id="delete-all-btn"
+                    >
+                        🗑️ Delete All Data
+                    </button>
+                )}
+
+                {deleteStage === 1 && (
+                    <div>
+                        <div style={{
+                            padding: '10px 14px',
+                            borderRadius: 10,
+                            background: 'rgba(248,124,106,0.08)',
+                            border: '1px solid rgba(248,124,106,0.3)',
+                            fontSize: 13,
+                            color: 'var(--accent2)',
+                            fontWeight: 500,
+                            marginBottom: 10,
+                            textAlign: 'center',
+                            lineHeight: 1.5,
+                        }}>
+                            ⚠️ This will permanently delete <strong>{paints.length} paint{paints.length !== 1 ? 's' : ''}</strong> and <strong>{palettes.length} palette{palettes.length !== 1 ? 's' : ''}</strong>.<br />
+                            Tap the button again to confirm.
+                        </div>
+                        <div className="flex gap-3">
+                            <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setDeleteStage(0)}>
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-danger"
+                                style={{ flex: 2 }}
+                                onClick={handleDeleteAll}
+                                id="confirm-delete-btn"
+                            >
+                                🗑️ Yes, Delete Everything
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {deleteStage === 2 && (
+                    <button className="btn btn-danger w-full" disabled>
+                        ⏳ Deleting…
+                    </button>
+                )}
+            </div>
+
             {/* PWA install hint */}
             <div className="card" style={{ marginBottom: 16 }}>
                 <div className="section-label" style={{ marginBottom: 4 }}>Install App</div>
@@ -102,7 +194,7 @@ export default function Settings() {
             <div className="card" style={{ opacity: 0.7 }}>
                 <div className="section-label" style={{ marginBottom: 6 }}>About</div>
                 <div className="text-sm text-muted" style={{ lineHeight: 1.6 }}>
-                    <strong style={{ color: 'var(--text)' }}>Acryl Mixer</strong> v1.0<br />
+                    <strong style={{ color: 'var(--text)' }}>Acryl Mixer</strong> v1.1<br />
                     All data stored locally on your device.<br />
                     Color harmony powered by chroma-js.<br />
                     Fully vibecoded 🤖<br />
