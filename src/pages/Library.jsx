@@ -236,6 +236,11 @@ function AddPaintModal({ initial, onSave, onClose }) {
         toast('Color captured! 🎨')
     }
 
+    function handleRetake() {
+        setExtractedPreview(null)
+        startCamera()
+    }
+
     function handleSave() {
         if (!name.trim()) { toast('Please enter a paint name'); return }
         let validHex = hex
@@ -260,27 +265,32 @@ function AddPaintModal({ initial, onSave, onClose }) {
                     <div style={{ marginBottom: 16 }}>
                         {/* Hidden canvas used for pixel sampling */}
                         <canvas ref={canvasRef} style={{ display: 'none' }} />
-                        <div className="camera-wrapper">
-                            <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%' }} />
-                            {/* Center crosshair */}
-                            <div className="camera-crosshair" />
-                            {/* Live color preview — top right */}
-                            {liveColor && (
-                                <div style={{
-                                    position: 'absolute', top: 12, right: 12,
-                                    width: 44, height: 44, borderRadius: '50%',
-                                    background: liveColor,
-                                    border: '3px solid rgba(255,255,255,0.9)',
-                                    boxShadow: '0 2px 16px rgba(0,0,0,0.6)',
-                                }} />
-                            )}
-                        </div>
-                        <button className="btn btn-primary w-full mt-3" onClick={captureFrame} disabled={!liveColor}>📸 Capture Color</button>
-                        {extractedPreview && (
-                            <div className="flex items-center gap-3 mt-3">
-                                <div className="swatch" style={{ background: extractedPreview }} />
-                                <span className="text-sm text-muted font-semibold">{extractedPreview}</span>
+                        {extractedPreview ? (
+                            <div>
+                                <div style={{ height: 120, borderRadius: 'var(--radius)', background: extractedPreview, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: contrastColor(extractedPreview) }}>
+                                    {extractedPreview.toUpperCase()}
+                                </div>
+                                <button className="btn btn-ghost w-full" onClick={handleRetake}>🔄 Retake</button>
                             </div>
+                        ) : (
+                            <>
+                                <div className="camera-wrapper">
+                                    <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%' }} />
+                                    {/* Center crosshair */}
+                                    <div className="camera-crosshair" />
+                                    {/* Live color preview — top right */}
+                                    {liveColor && (
+                                        <div style={{
+                                            position: 'absolute', top: 12, right: 12,
+                                            width: 44, height: 44, borderRadius: '50%',
+                                            background: liveColor,
+                                            border: '3px solid rgba(255,255,255,0.9)',
+                                            boxShadow: '0 2px 16px rgba(0,0,0,0.6)',
+                                        }} />
+                                    )}
+                                </div>
+                                <button className="btn btn-primary w-full mt-3" onClick={captureFrame} disabled={!liveColor}>📸 Capture Color</button>
+                            </>
                         )}
                     </div>
                 )}
