@@ -99,7 +99,11 @@ export default function Settings() {
                 <div className="text-sm text-muted" style={{ lineHeight: 1.6 }}>
                     <strong style={{ color: 'var(--text)' }}>Acryl Mixer</strong> v1.0<br />
                     All data stored locally on your device.<br />
-                    Color harmony powered by chroma-js.
+                    Color harmony powered by chroma-js.<br />
+                    Fully vibecoded 🤖<br />
+                    <a href="https://github.com/lkuebler/acryl-mixer" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
+                        github.com/lkuebler/acryl-mixer
+                    </a>
                 </div>
             </div>
         </div>
