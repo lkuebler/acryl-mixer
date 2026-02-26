@@ -3,14 +3,45 @@ import { getAllPaints, addPaint, deletePaint, updatePaint } from '../db/db.js'
 import { contrastColor } from '../utils/colorHarmony.js'
 import { useToast } from '../components/Toast.jsx'
 import PhotoColorPicker from '../components/PhotoColorPicker.jsx'
+import ColorWheelPicker from '../components/ColorWheelPicker.jsx'
+import { nameColor } from '../utils/ntc.js'
 import chroma from 'chroma-js'
 
 const STANDARD_COLORS = [
+    // Whites & Blacks
     { name: 'Titanium White', hex: '#F2F0EC', brand: 'Generic' },
+    { name: 'Zinc White', hex: '#E8E8E2', brand: 'Generic' },
     { name: 'Mars Black', hex: '#1C1C1E', brand: 'Generic' },
+    { name: 'Ivory Black', hex: '#2B2B2A', brand: 'Generic' },
+    // Reds
     { name: 'Cadmium Red', hex: '#E8291C', brand: 'Generic' },
-    { name: 'Ultramarine', hex: '#1B3F8B', brand: 'Generic' },
+    { name: 'Alizarin Crimson', hex: '#A20010', brand: 'Generic' },
+    { name: 'Venetian Red', hex: '#B01B2E', brand: 'Generic' },
+    { name: 'Quinacridone Magenta', hex: '#B0306A', brand: 'Generic' },
+    // Oranges
+    { name: 'Cadmium Orange', hex: '#E07B39', brand: 'Generic' },
+    { name: 'Burnt Sienna', hex: '#B8490B', brand: 'Generic' },
+    // Yellows
+    { name: 'Cadmium Yellow', hex: '#E6C32A', brand: 'Generic' },
     { name: 'Yellow Ochre', hex: '#C4922A', brand: 'Generic' },
+    { name: 'Naples Yellow', hex: '#E8C76B', brand: 'Generic' },
+    { name: 'Raw Sienna', hex: '#A67B5B', brand: 'Generic' },
+    // Greens
+    { name: 'Phthalo Green', hex: '#1E5945', brand: 'Generic' },
+    { name: 'Sap Green', hex: '#7B9070', brand: 'Generic' },
+    { name: 'Viridian', hex: '#00746F', brand: 'Generic' },
+    { name: 'Chromium Oxide', hex: '#4A6741', brand: 'Generic' },
+    // Blues
+    { name: 'Ultramarine', hex: '#1B3F8B', brand: 'Generic' },
+    { name: 'Cobalt Blue', hex: '#5C8ACC', brand: 'Generic' },
+    { name: 'Prussian Blue', hex: '#003153', brand: 'Generic' },
+    { name: 'Phthalo Blue', hex: '#1A1A6C', brand: 'Generic' },
+    { name: 'Cerulean', hex: '#33A1C9', brand: 'Generic' },
+    // Purples
+    { name: 'Dioxazine Purple', hex: '#7B3F9E', brand: 'Generic' },
+    // Browns
+    { name: 'Burnt Umber', hex: '#3C1810', brand: 'Generic' },
+    { name: 'Raw Umber', hex: '#A69258', brand: 'Generic' },
 ]
 
 export default function Library() {
@@ -18,6 +49,7 @@ export default function Library() {
     const [search, setSearch] = useState('')
     const [showAdd, setShowAdd] = useState(false)
     const [editPaint, setEditPaint] = useState(null)
+    const [colorSearch, setColorSearch] = useState('')
     const toast = useToast()
 
     useEffect(() => { load() }, [])
@@ -31,6 +63,10 @@ export default function Library() {
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         (p.brand || '').toLowerCase().includes(search.toLowerCase()) ||
         (p.code || '').toLowerCase().includes(search.toLowerCase())
+    )
+
+    const filteredStandard = STANDARD_COLORS.filter(c =>
+        !colorSearch || c.name.toLowerCase().includes(colorSearch.toLowerCase())
     )
 
     async function handleDelete(id) {
@@ -66,7 +102,7 @@ export default function Library() {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1>🎨 My Library</h1>
-                        <p>{paints.length} paint{paints.length !== 1 ? 's' : ''} · tap to edit · swipe to delete</p>
+                        <p>{paints.length} paint{paints.length !== 1 ? 's' : ''} · tap to edit</p>
                     </div>
                     <button className="btn btn-primary" onClick={() => setShowAdd(true)} id="add-paint-btn">
                         + Add
@@ -87,9 +123,22 @@ export default function Library() {
 
             {/* Quick-add standard colors */}
             <div style={{ marginBottom: 16 }}>
-                <div className="section-label" style={{ marginBottom: 8 }}>Quick Add</div>
+                <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+                    <div className="section-label">Quick Add Colors</div>
+                </div>
+                {/* Color search */}
+                <div className="search-wrapper" style={{ marginBottom: 8 }}>
+                    <span className="search-icon">🎨</span>
+                    <input
+                        className="input search-input"
+                        placeholder="Search colors…"
+                        value={colorSearch}
+                        onChange={e => setColorSearch(e.target.value)}
+                        id="color-search"
+                    />
+                </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {STANDARD_COLORS.map(color => {
+                    {filteredStandard.map(color => {
                         const added = paints.some(p => p.hex === color.hex)
                         return (
                             <button
@@ -114,6 +163,9 @@ export default function Library() {
                             </button>
                         )
                     })}
+                    {filteredStandard.length === 0 && (
+                        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>No colors found for "{colorSearch}"</div>
+                    )}
                 </div>
             </div>
 
@@ -148,7 +200,6 @@ export default function Library() {
 }
 
 function PaintCard({ paint, onEdit, onDelete }) {
-    const textColor = contrastColor(paint.hex)
     return (
         <div className="paint-card" onClick={onEdit} id={`paint-${paint.id}`}>
             <div className="paint-card-swatch" style={{ background: paint.hex }} />
@@ -176,6 +227,7 @@ function AddPaintModal({ initial, onSave, onClose }) {
     const [brand, setBrand] = useState(initial?.brand || '')
     const [code, setCode] = useState(initial?.code || '')
     const [hex, setHex] = useState(initial?.hex || '#7c6af7')
+    const [autoNameUsed, setAutoNameUsed] = useState(!initial?.name)
     const [cameraActive, setCameraActive] = useState(false)
     const [extractedPreview, setExtractedPreview] = useState(null)
     const [liveColor, setLiveColor] = useState(null)
@@ -184,6 +236,25 @@ function AddPaintModal({ initial, onSave, onClose }) {
     const intervalRef = useRef(null)
     const canvasRef = useRef(null)
     const toast = useToast()
+
+    // Auto-name: update name when hex changes if user hasn't typed a custom name
+    function handleHexChange(newHex) {
+        setHex(newHex)
+        if (autoNameUsed) {
+            try {
+                const { name: colorName } = nameColor(newHex)
+                setName(colorName)
+            } catch { }
+        }
+    }
+
+    // On mount, auto-name if adding new paint
+    useEffect(() => {
+        if (!initial?.name) {
+            const { name: colorName } = nameColor(hex)
+            setName(colorName)
+        }
+    }, []) // eslint-disable-line
 
     // Parse hex to rgb
     function hexToRgb(h) {
@@ -210,6 +281,7 @@ function AddPaintModal({ initial, onSave, onClose }) {
         return () => clearInterval(intervalRef.current)
     }, [cameraActive])
 
+    // ── Camera helpers ──────────────────────────────────────────────────────
     async function startCamera() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
@@ -223,14 +295,26 @@ function AddPaintModal({ initial, onSave, onClose }) {
 
     function stopCamera() {
         clearInterval(intervalRef.current)
-        streamRef.current?.getTracks().forEach(t => t.stop())
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(t => t.stop())
+            streamRef.current = null
+        }
         setCameraActive(false)
         setLiveColor(null)
     }
 
+    // Stop camera on unmount
+    useEffect(() => () => stopCamera(), []) // eslint-disable-line
+
+    function switchTab(newTab) {
+        if (newTab !== 'camera') stopCamera()
+        if (newTab === 'camera') startCamera()
+        setTab(newTab)
+    }
+
     function captureFrame() {
         if (!liveColor) return
-        setHex(liveColor)
+        handleHexChange(liveColor)
         setExtractedPreview(liveColor)
         stopCamera()
         toast('Color captured! 🎨')
@@ -256,9 +340,9 @@ function AddPaintModal({ initial, onSave, onClose }) {
                 <div className="modal-title">{initial ? 'Edit Paint' : 'Add Paint'}</div>
 
                 <div className="tab-pills" style={{ marginBottom: 16 }}>
-                    <button className={`tab-pill ${tab === 'manual' ? 'active' : ''}`} onClick={() => { setTab('manual'); stopCamera() }}>Manual</button>
-                    <button className={`tab-pill ${tab === 'camera' ? 'active' : ''}`} onClick={() => { setTab('camera'); startCamera() }}>Camera</button>
-                    <button className={`tab-pill ${tab === 'photo' ? 'active' : ''}`} onClick={() => { setTab('photo'); stopCamera() }}>Photo</button>
+                    <button className={`tab-pill ${tab === 'manual' ? 'active' : ''}`} onClick={() => switchTab('manual')}>Manual</button>
+                    <button className={`tab-pill ${tab === 'camera' ? 'active' : ''}`} onClick={() => switchTab('camera')}>Camera</button>
+                    <button className={`tab-pill ${tab === 'photo' ? 'active' : ''}`} onClick={() => switchTab('photo')}>Photo</button>
                 </div>
 
                 {tab === 'camera' && (
@@ -300,7 +384,7 @@ function AddPaintModal({ initial, onSave, onClose }) {
                         <PhotoColorPicker
                             pickedHex={extractedPreview}
                             onColorPicked={({ hex: pickedHex }) => {
-                                setHex(pickedHex)
+                                handleHexChange(pickedHex)
                                 setExtractedPreview(pickedHex)
                                 toast('Color picked! 🎨')
                             }}
@@ -308,25 +392,23 @@ function AddPaintModal({ initial, onSave, onClose }) {
                     </div>
                 )}
 
+                {/* Color wheel picker — shown on manual tab, also below others as adjuster */}
                 <div className="field">
                     <label className="label">Color</label>
-                    <div className="flex items-center gap-3">
-                        <input type="color" value={hex} onChange={e => setHex(e.target.value)} id="color-picker-input" />
-                        <input
-                            className="input"
-                            value={hex}
-                            onChange={e => setHex(e.target.value)}
-                            placeholder="#7c6af7"
-                            style={{ fontFamily: 'monospace' }}
-                            id="hex-input"
-                        />
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+                        <ColorWheelPicker hex={hex} onChange={handleHexChange} />
                     </div>
-                    <div style={{ marginTop: 10, height: 48, borderRadius: 'var(--radius-sm)', background: hex }} />
                 </div>
 
                 <div className="field">
-                    <label className="label">Name *</label>
-                    <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Titanium White" id="paint-name-input" />
+                    <label className="label">Name * {autoNameUsed && <span style={{ fontSize: 11, color: 'var(--text-faint)', fontWeight: 400 }}>(auto-named)</span>}</label>
+                    <input
+                        className="input"
+                        value={name}
+                        onChange={e => { setName(e.target.value); setAutoNameUsed(false) }}
+                        placeholder="e.g. Titanium White"
+                        id="paint-name-input"
+                    />
                 </div>
                 <div className="field">
                     <label className="label">Brand</label>

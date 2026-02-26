@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react'
-import { getAllPaints } from '../db/db.js'
+import { getAllPaints, getAllPalettes } from '../db/db.js'
 import { importDB } from '../db/db.js'
 import { downloadJSON, downloadCSV } from '../db/export.js'
 import { useToast } from '../components/Toast.jsx'
 
 export default function Settings() {
     const [paints, setPaints] = useState([])
+    const [palettes, setPalettes] = useState([])
     const toast = useToast()
 
-    useEffect(() => { getAllPaints().then(setPaints) }, [])
+    useEffect(() => {
+        getAllPaints().then(setPaints)
+        getAllPalettes().then(setPalettes)
+    }, [])
 
     async function handleExportJSON() {
         try {
@@ -52,6 +56,7 @@ export default function Settings() {
                 <div className="section-label" style={{ marginBottom: 12 }}>Library Summary</div>
                 <div className="flex" style={{ gap: 12 }}>
                     <StatBadge value={paints.length} label="Paints" color="var(--accent)" />
+                    <StatBadge value={palettes.length} label="Palettes" color="var(--accent2)" />
                 </div>
             </div>
 

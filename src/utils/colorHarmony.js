@@ -7,6 +7,7 @@ const HARMONY_MODES = {
     'split-complementary': 'Split Complementary',
     tetradic: 'Tetradic',
     monochromatic: 'Monochromatic',
+    random: 'Random',
 }
 
 export { HARMONY_MODES }
@@ -75,11 +76,39 @@ export function generatePalette(hex, mode, count = 5) {
             ]).mode('lab').colors(count)
             break
         }
+        case 'random': {
+            // Generate evenly spread hues with slight variation in s/l
+            const goldenRatio = 0.6180339887
+            let hStart = Math.random()
+            for (let i = 0; i < count; i++) {
+                hStart = (hStart + goldenRatio) % 1
+                const rh = hStart * 360
+                const rs = 0.5 + Math.random() * 0.4
+                const rl = 0.35 + Math.random() * 0.3
+                colors.push(chroma.hsl(rh, rs, rl))
+            }
+            break
+        }
         default:
             colors = [base.hex()]
     }
 
     return colors.map(c => (typeof c === 'string' ? c : c.hex()))
+}
+
+/**
+ * Interpolate between two colors to create a palette.
+ * @param {string} hex1 - first color
+ * @param {string} hex2 - second color
+ * @param {number} count - number of colors
+ * @returns {string[]}
+ */
+export function twoColorMix(hex1, hex2, count = 5) {
+    try {
+        return chroma.scale([hex1, hex2]).mode('lab').colors(count)
+    } catch {
+        return [hex1, hex2]
+    }
 }
 
 function interpolate(chromaColors, count) {
