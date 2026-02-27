@@ -46,7 +46,7 @@ export default function ColorWheelPicker({ hex = '#7c6af7', onChange }) {
         const cy = rect.top + rect.height / 2
         const clientX = e.touches ? e.touches[0].clientX : e.clientX
         const clientY = e.touches ? e.touches[0].clientY : e.clientY
-        const angle = ((Math.atan2(clientY - cy, clientX - cx) * 180) / Math.PI + 360) % 360
+        const angle = ((Math.atan2(clientY - cy, clientX - cx) * 180 / Math.PI) + 90 + 360) % 360
         return angle
     }
 
@@ -66,7 +66,7 @@ export default function ColorWheelPicker({ hex = '#7c6af7', onChange }) {
 
     // ── Thumb position on wheel ───────────────────────────────────────────────
     const thumbR = SIZE / 2 - 14
-    const thumbAngleRad = (h * Math.PI) / 180
+    const thumbAngleRad = ((h - 90) * Math.PI) / 180
     const thumbX = SIZE / 2 + thumbR * Math.cos(thumbAngleRad)
     const thumbY = SIZE / 2 + thumbR * Math.sin(thumbAngleRad)
 
