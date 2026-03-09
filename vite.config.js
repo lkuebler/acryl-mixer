@@ -5,5 +5,11 @@ export default defineConfig({
   base: '/acryl-mixer/',
   plugins: [
     react()
-  ]
+  ],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.js',
+    include: ['src/test/**/*.test.{js,jsx}'],
+  },
 })
