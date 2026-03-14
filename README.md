@@ -4,7 +4,7 @@ A mobile-first web app for managing your acrylic paint library, generating color
 
 > 🤖 **Fully vibecoded** — this app was built entirely with AI assistance.
 
-**🌐 Live:** [https://linuskuebler.github.io/acryl-mixer/](https://linuskuebler.github.io/acryl-mixer/)
+**🌐 Live:** [https://lkuebler.github.io/acryl-mixer/](https://lkuebler.github.io/acryl-mixer/)
 
 **📦 Repo:** [https://github.com/lkuebler/acryl-mixer](https://github.com/lkuebler/acryl-mixer)
 
