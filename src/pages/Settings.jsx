@@ -6,7 +6,7 @@ import { downloadJSON, downloadCSV } from '../db/export.js'
 import { useToast } from '../components/Toast.jsx'
 import { resetOnboarding } from '../components/Onboarding.jsx'
 
-export default function Settings({ onShowOnboarding }) {
+export default function Settings({ onShowOnboarding, theme, onToggleTheme }) {
     const [paints, setPaints] = useState([])
     const [palettes, setPalettes] = useState([])
     const [deleteStage, setDeleteStage] = useState(0) // 0=idle 1=confirm 2=deleting
@@ -110,6 +110,29 @@ export default function Settings({ onShowOnboarding }) {
                     📂 Choose JSON File
                     <input type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={handleImport} />
                 </label>
+            </div>
+
+            {/* Appearance */}
+            <div className="card" style={{ marginBottom: 16 }}>
+                <div className="section-label" style={{ marginBottom: 4 }}>Appearance</div>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <div style={{ fontSize: 14, fontWeight: 600 }}>
+                            {theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+                        </div>
+                        <div className="text-sm text-muted" style={{ marginTop: 2 }}>
+                            Switch between light and dark theme
+                        </div>
+                    </div>
+                    <button
+                        className="theme-toggle"
+                        onClick={onToggleTheme}
+                        aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                        id="theme-toggle-btn"
+                    >
+                        <span className="theme-toggle-thumb" />
+                    </button>
+                </div>
             </div>
 
             {/* App */}

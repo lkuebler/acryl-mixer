@@ -31,10 +31,10 @@ export default function BottomNav() {
             <style>{`
         .bottom-nav {
           display: flex;
-          background: rgba(15,15,26,0.95);
+          background: var(--nav-bg);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          border-top: 1px solid rgba(255,255,255,0.06);
+          border-top: 1px solid var(--nav-border);
           padding-bottom: var(--safe-bottom);
           height: calc(var(--nav-h) + var(--safe-bottom));
           flex-shrink: 0;
