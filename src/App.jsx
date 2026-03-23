@@ -7,9 +7,11 @@ import Library from './pages/Library.jsx'
 import PaletteGen from './pages/PaletteGen.jsx'
 import MixGuide from './pages/MixGuide.jsx'
 import Settings from './pages/Settings.jsx'
+import { useTheme } from './hooks/useTheme.js'
 
 export default function App() {
     const [showOnboarding, setShowOnboarding] = useState(false)
+    const { theme, toggleTheme } = useTheme()
 
     return (
         <ToastProvider>
@@ -18,7 +20,7 @@ export default function App() {
                     <Route path="/" element={<Library />} />
                     <Route path="/palettes" element={<PaletteGen />} />
                     <Route path="/mix" element={<MixGuide />} />
-                    <Route path="/settings" element={<Settings onShowOnboarding={() => setShowOnboarding(true)} />} />
+                    <Route path="/settings" element={<Settings onShowOnboarding={() => setShowOnboarding(true)} theme={theme} onToggleTheme={toggleTheme} />} />
                 </Routes>
                 <BottomNav />
             </HashRouter>
